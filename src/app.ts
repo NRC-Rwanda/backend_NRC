@@ -1,0 +1,20 @@
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import helmet from "helmet";
+import authRoutes from "./routes/authRoutes";
+// import publicationRoutes from "./routes/publicationRoutes";
+
+const app = express();
+
+// Middleware
+app.use(cors()); 
+app.use(helmet());
+app.use(morgan("dev")); 
+app.use(express.json());
+
+// Routes
+app.use("/api/auth", authRoutes);
+// app.use("/api/publications", publicationRoutes);
+
+export default app;
