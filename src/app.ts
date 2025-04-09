@@ -4,8 +4,10 @@ import morgan from "morgan";
 import helmet from "helmet";
 import authRoutes from "./routes/authRoutes";
 import contactRoutes from "./routes/contactRoutes";
-// import publicationRoutes from "./routes/publicationRoutes";
+import publicationRoutes from "./routes/publicationRoutes";
 import teamRoutes from "./routes/teamRoutes";
+import opportunityRoutes from "./routes/opportunityRoutes";
+import announcementRoutes from "./routes/announcementRoutes";
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api", contactRoutes);
 app.use("/api", teamRoutes);
-// app.use("/api/publications", publicationRoutes);
+app.use("/api", publicationRoutes);
+app.use("/api", announcementRoutes);
+app.use("/api", opportunityRoutes);
 
 export default app;

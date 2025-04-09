@@ -1,16 +1,23 @@
-// import express from "express";
-// import { createPublication } from "../controllers/publicationController";
-// import { upload } from "../utils/upload";
+import express from "express";
+import {
+  addPublication,
+  getPublications,
+  getPublicationsByCategory,
+  deletePublication,
+} from "../controllers/publicationController";
 
-// const router = express.Router();
+const router = express.Router();
 
-// router.post(
-//   "/",
-//   upload.fields([
-//     { name: "image", maxCount: 1 },
-//     { name: "pdf", maxCount: 1 },
-//   ]),
-//   createPublication
-// );
+// Add a new publication
+router.post("/publications", addPublication);
 
-// export default router;
+// Get all publications
+router.get("/publications", getPublications);
+
+// Get publications by category (e.g., "Research", "Reports", "Resources")
+router.get("/publications/category/:category", getPublicationsByCategory);
+
+// Delete a publication
+router.delete("/publications/:id", deletePublication);
+
+export default router;
