@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response,RequestHandler } from "express";
 import User from "../models/User";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
@@ -92,35 +92,40 @@ export const forgotPassword = async (req: Request, res: Response) => {
 };
 
 // Reset Password
-export const resetPassword = async (req: Request, res: Response) => {
+export const resetPassword: RequestHandler = async (req, res) => {
   const { token } = req.params;
-  const { password } = req.body;
+  const { password, confirmPassword } = req.body;
 
   try {
-    // Hash the token to match DB
-    const resetPasswordToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    // Check if both passwords match
+    if (password !== confirmPassword) {
+      res.status(400).json({ success: false, error: "Passwords do not match" });
+      return;
+    }
+
+    // Hash the token and find the user
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     const user = await User.findOne({
-      resetPasswordToken,
-      resetPasswordExpire: { $gt: Date.now() }, // Check if token is not expired
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }, // Ensure the token is not expired
     });
 
     if (!user) {
       res.status(400).json({ success: false, error: "Invalid or expired token" });
-        return;
+      return;
     }
 
-    // Update password
+    // Update the user's password
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+
     await user.save();
 
-    res.status(200).json({ success: true, message: "Password updated" });
+    res.status(200).json({ success: true, message: "Password reset successful" });
   } catch (err) {
-    res.status(500).json({ success: false, error: "Server error" });
+    console.error("Error in resetPassword:", err);
+    res.status(500).json({ success: false, error: "Failed to reset password" });
   }
 };
