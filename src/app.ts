@@ -8,6 +8,7 @@ import publicationRoutes from "./routes/publicationRoutes";
 import teamRoutes from "./routes/teamRoutes";
 import opportunityRoutes from "./routes/opportunityRoutes";
 import announcementRoutes from "./routes/announcementRoutes";
+import blogRoutes from "./routes/blogsRoutes";
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use("/api", teamRoutes);
 app.use("/api", publicationRoutes);
 app.use("/api", announcementRoutes);
 app.use("/api", opportunityRoutes);
+app.use("/api", blogRoutes);
 
 export default app;
