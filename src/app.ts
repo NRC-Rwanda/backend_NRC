@@ -3,6 +3,7 @@ import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import authRoutes from "./routes/authRoutes";
+import contactRoutes from "./routes/contactRoutes";
 // import publicationRoutes from "./routes/publicationRoutes";
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api", contactRoutes);
 // app.use("/api/publications", publicationRoutes);
 
 export default app;

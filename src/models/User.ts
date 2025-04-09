@@ -10,6 +10,7 @@ interface IUserMethods {
   interface IUser extends Document, IUserMethods {
     name: string;
     email: string;
+    role: string;
     password: string;
     resetPasswordToken?: string;
     resetPasswordExpire?: Date;
@@ -19,6 +20,7 @@ const UserSchema = new Schema<IUser>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, select: false },
+  role: { type: String, enum: ["user", "admin"], default: "user" },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
 });
