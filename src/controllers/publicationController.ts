@@ -3,16 +3,19 @@ import Publication from "../models/publication";
 
 // Add a new publication
 export const addPublication = async (req: Request, res: Response) => {
-  const { title, shortDescription, image, pdf, category, isOngoing, disclaimer } = req.body;
-
   try {
+    const { title, shortDescription, category, isOngoing, disclaimer } = req.body;
+
+    const image = (req.files as any)?.image?.[0]?.originalname || "";
+    const pdf = (req.files as any)?.pdf?.[0]?.originalname || "";
+
     const publication = await Publication.create({
       title,
       shortDescription,
       image,
       pdf,
       category,
-      isOngoing,
+      isOngoing: isOngoing === 'true', // If sent as string in form-data
       disclaimer,
     });
 
@@ -22,6 +25,7 @@ export const addPublication = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "Failed to add publication" });
   }
 };
+
 
 // Get all publications
 export const getPublications = async (req: Request, res: Response) => {

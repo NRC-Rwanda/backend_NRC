@@ -1,25 +1,44 @@
 import { Request, Response } from "express";
 import Blog from "../models/blogs";
 
-// Add a new blog
-export const addBlog = async (req: Request, res: Response) => {
-  const { title, content, video, pdf, image } = req.body; // Include the image field
 
+
+export const addBlog = async (req: Request, res: Response) => {
   try {
+    const { title, shortDescription, longDescription } = req.body;
+
+    const video = (req.files as any)?.video?.[0]?.filename || "";
+    const pdf = (req.files as any)?.pdf?.[0]?.filename || "";
+    const image = (req.files as any)?.image?.[0]?.filename || "";
+
     const blog = await Blog.create({
       title,
-      content,
+      shortDescription,
+      longDescription,
       video,
       pdf,
-      image, // Add the image field to the blog creation
+      image,
     });
 
-    res.status(201).json({ success: true, data: blog });
+    const host = `${req.protocol}://${req.get("host")}`; 
+
+    res.status(201).json({
+      success: true,
+      data: {
+        ...blog.toJSON(),
+        videoUrl: video ? `${host}/uploads/${video}` : null,
+        pdfUrl: pdf ? `${host}/uploads/${pdf}` : null,
+        imageUrl: image ? `${host}/uploads/${image}` : null,
+      },
+    });
   } catch (err) {
     console.error("Error adding blog:", err);
     res.status(500).json({ success: false, error: "Failed to add blog" });
   }
 };
+
+
+
 
 // Get all blogs
 export const getBlogs = async (req: Request, res: Response) => {

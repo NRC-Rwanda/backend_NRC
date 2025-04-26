@@ -4,7 +4,7 @@ import { validateRegister } from "../middleware/authValidation";
 
 const router = express.Router();
 
-router.post("/register", validateRegister, register);
+router.post("/register", register);
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);

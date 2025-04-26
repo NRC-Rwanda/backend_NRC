@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../config/multerConfig";
 import {
   addBlog,
   getBlogs,
@@ -8,11 +9,15 @@ import {
 
 const router = express.Router();
 
-// Add a new blog
-router.post("/blogs", addBlog);
+// Add a new blog with file uploads
+router.post(
+  "/blogs",
+  upload.fields([{ name: "video" }, { name: "pdf" }, { name: "image" }]),
+  addBlog
+);
 
 // Get all blogs
-router.get("/blogs", getBlogs);
+router.get("/blogs", getBlogs); 
 
 // Get a blog by ID
 router.get("/blogs/:id", getBlogById);

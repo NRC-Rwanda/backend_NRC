@@ -8,12 +8,12 @@ import sendEmail from "../utils/sendEmail"; // We'll implement this next
 
 // Register User
 export const register = async (req: Request, res: Response) => {
-  const { name, email, password, role = "user" } = req.body; // Default role to "user"
+  const { firstName, lastName,status ,email, password, role = "user" } = req.body; // Default role to "user"
   try {
     console.log("Request Body:", req.body);
 
     // Create the user with the optional role
-    const user = await User.create({ name, email, password, role });
+    const user = await User.create({ firstName, lastName,status, email, password, role });
 
     // Generate a JWT token
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET!, {
@@ -46,7 +46,9 @@ export const login = async (req: Request, res: Response) => {
     });
 
     // Include the role in the response
+    
     res.status(200).json({ success: true, token, role: user.role });
+    console.log(user.role)
   } catch (err) {
     console.error("Error in login:", err);
     res.status(500).json({ success: false, error: "Login failed" });

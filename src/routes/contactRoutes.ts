@@ -1,9 +1,27 @@
 import express from "express";
-import { sendContactMessage } from "../controllers/contactController";
+import {
+  sendContactMessage,
+  getAllMessages,
+  getMessageById,
+  updateMessage,
+  deleteMessage
+} from "../controllers/contactController";
 
 const router = express.Router();
 
-// POST route to handle contact form submissions
+// Contact form submission
 router.post("/contact", sendContactMessage);
+
+// Get all messages (for admin dashboard)
+router.get("/messages", getAllMessages);
+
+// Get single message
+router.get("/messages/:id", getMessageById);
+
+// Update a message
+router.put("/messages/:id", updateMessage);
+
+// Delete a message
+router.delete("delete/:id", deleteMessage);
 
 export default router;
