@@ -5,6 +5,7 @@ import {
   getBlogs,
   getBlogById,
   deleteBlog,
+  updateBlog, // Import the updateBlog controller
 } from "../controllers/blogsController";
 
 const router = express.Router();
@@ -17,10 +18,17 @@ router.post(
 );
 
 // Get all blogs
-router.get("/blogs", getBlogs); 
+router.get("/blogs", getBlogs);
 
 // Get a blog by ID
 router.get("/blogs/:id", getBlogById);
+
+// Update a blog
+router.put(
+  "/blogs/:id",
+  upload.fields([{ name: "video" }, { name: "pdf" }, { name: "image" }]),
+  updateBlog
+);
 
 // Delete a blog
 router.delete("/blogs/:id", deleteBlog);
