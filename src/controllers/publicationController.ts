@@ -1,22 +1,28 @@
 import { Request, Response } from "express";
 import Publication from "../models/publication";
 
-// Add a new publication
 export const addPublication = async (req: Request, res: Response) => {
   try {
+    console.log("Uploaded Files:", req.files); // Debugging: Log uploaded files
+    console.log("Request Body:", req.body); // Debugging: Log request body
+
     const { title, shortDescription, category, isOngoing, disclaimer } = req.body;
 
-    const image = (req.files as any)?.image?.[0]?.originalname || "";
-    const pdf = (req.files as any)?.pdf?.[0]?.originalname || "";
+    // Get file paths from the uploaded files
+    const video = (req.files as any)?.video?.[0]?.filename || null;
+    const pdf = (req.files as any)?.pdf?.[0]?.filename || null;
+    const image = (req.files as any)?.image?.[0]?.filename || null;
 
+    // Create a new publication
     const publication = await Publication.create({
       title,
       shortDescription,
-      image,
-      pdf,
       category,
-      isOngoing: isOngoing === 'true', // If sent as string in form-data
+      isOngoing,
       disclaimer,
+      video,
+      pdf,
+      image,
     });
 
     res.status(201).json({ success: true, data: publication });
