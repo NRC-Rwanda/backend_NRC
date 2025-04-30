@@ -1,31 +1,27 @@
 import express from "express";
-import {
-  addPublication,
-  getPublications,
-  getPublicationsByCategory,
-  deletePublication,
-} from "../controllers/publicationController";
-import multer from "multer";
-
-// Simple memory storage (you can later save to disk or upload to cloud)
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+import { addPublication, getPublications, getPublicationsByCategory, deletePublication } from "../controllers/publicationController";
+import upload from "../config/multerConfig"; // Import the multer configuration
 
 const router = express.Router();
 
-// Add a new publication
-router.post("/publications",upload.fields([
-  { name: "image", maxCount: 1 },
-  { name: "pdf", maxCount: 1 },
-]), addPublication);
+// Route to add a publication with file uploads
+router.post(
+  "/publications",
+  upload.fields([
+    { name: "image", maxCount: 1 }, // Allow one image file
+    { name: "pdf", maxCount: 1 },   // Allow one PDF file
+    { name: "video", maxCount: 1 }, // Allow one video file
+  ]),
+  addPublication
+);
 
-// Get all publications
+// Route to get all publications
 router.get("/publications", getPublications);
 
-// Get publications by category (e.g., "Research", "Reports", "Resources")
+// Route to get publications by category
 router.get("/publications/category/:category", getPublicationsByCategory);
 
-// Delete a publication
+// Route to delete a publication
 router.delete("/publications/:id", deletePublication);
 
 export default router;
