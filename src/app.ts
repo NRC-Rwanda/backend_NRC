@@ -14,14 +14,29 @@ import blogRoutes from "./routes/blogsRoutes";
 const app = express();
 
 // Middleware
-app.use(cors()); 
+// app.use(cors()); 
 app.use(helmet());
 app.use(morgan("dev")); 
 app.use(express.json());
-// In Express (Node.js)
- app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// In your main app.js or server.js
+app.use(cors({
+  origin: 'http://localhost:3000', // Your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+  exposedHeaders: ['Content-Length', 'Content-Type']
+}));
+
+// Make sure your static file serving has proper headers
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 
+// Middleware to parse URL-encoded request bodies
+app.use(express.urlencoded({ extended: true }));
  
 // Routes
 app.use("/api", authRoutes);

@@ -25,7 +25,7 @@ export const addTeamMember = async (req: Request, res: Response) => {
     const teamMember = await TeamMember.create({
       name,
       role,
-      image: `/uploads/${image}`, // Save the file path
+      image: `${image}`, // Save the file path
       shortDescription,
       category,
       year,
@@ -37,7 +37,7 @@ export const addTeamMember = async (req: Request, res: Response) => {
       success: true,
       data: {
         ...teamMember.toJSON(),
-        imageUrl: image ? `${host}/uploads/${image}` : null,
+        imageUrl: image ? `${host}/${image}` : null,
       },
     });
   } catch (err) {
@@ -92,7 +92,7 @@ export const updateTeamMember = async (req: Request, res: Response) => {
       year,
     };
 
-    if (image) updateData.image = `/uploads/${image}`;
+    if (image) updateData.image = `${image}`;
 
     // Find the team member by ID and update their details
     const updatedTeamMember = await TeamMember.findByIdAndUpdate(id, updateData, {

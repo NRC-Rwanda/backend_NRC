@@ -2,10 +2,10 @@
   "name": "nrcbackend",
   "version": "1.0.0",
   "main": "index.js",
-   "scripts": {
-  "dev": "nodemon src/server.ts",
-"build": "tsc && (if exist src\\public xcopy /E /I src\\public dist\\public || exit 0)",
-  "start": "node dist/server.js"
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "build": "tsc && (if exist src\\public xcopy /E /I src\\public dist\\public || exit 0)",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +28,7 @@
     "nodemailer": "^6.10.0"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",

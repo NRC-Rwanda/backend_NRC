@@ -23,16 +23,21 @@ connectDB().then(() => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 });
-// import cors from 'cors';
+
 
 // const corsOptions: cors.CorsOptions = {
 //   origin: '*',
 //   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 //   allowedHeaders: ['Content-Type', 'Authorization']
 // };
-
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*'); // Or specify your frontend origin
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 app.use(cors({
-  origin: 'http://localhost:3000', // Your React app's URL
+  origin: '*', // Your React app's URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
 // In Express (Node.js)

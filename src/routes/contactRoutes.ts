@@ -18,9 +18,6 @@ router.get("/messages", getAllMessages);
 // Get single message
 router.get("/messages/:id", getMessageById);
 
-// Update a message
-router.put("/messages/:id", updateMessage);
-
 // Delete a message
 router.delete("delete/:id", deleteMessage);
 
