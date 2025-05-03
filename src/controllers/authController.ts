@@ -45,20 +45,41 @@ export const register = async (req: Request, res: Response) => {
 // Login User
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+     res.status(400).json({ success: false, error: "Email and password are required" });
+     return;
+  }
+
   try {
-    // Find the user by email and include the password in the query
+    // Find user and explicitly select password field
     const user = await User.findOne({ email }).select("+password");
 
-    // Check if the user exists and the password matches
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-     res.status(401).json({ success: false, error: "Invalid credentials" });
-      return;
+    if (!user) {
+       res.status(401).json({ success: false, error: "Invalid credentials" });
+       return;
     }
 
-    // Generate a JWT token
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET!, {
-      expiresIn: parseInt(process.env.JWT_EXPIRE!, 10),
-    });
+    // Defensive check to ensure password is a string
+    if (typeof user.password !== "string" || typeof password !== "string") {
+      console.error("Password types are invalid:", typeof password, typeof user.password);
+       res.status(500).json({ success: false, error: "Server error: password format invalid" });
+       return;
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+       res.status(401).json({ success: false, error: "Invalid credentials" });
+       return;
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: parseInt(process.env.JWT_EXPIRE!, 10) }
+    );
 
     res.status(200).json({ success: true, token, role: user.role });
   } catch (err) {
@@ -66,6 +87,7 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "Login failed" });
   }
 };
+
 
 // Forgot Password
 export const forgotPassword = async (req: Request, res: Response) => {
