@@ -21,7 +21,7 @@ app.use(express.json());
 
 // In your main app.js or server.js
 app.use(cors({
-  origin: 'http://localhost:3000', // Your frontend URL
+  origin: 'https://nrc-frontend.vercel.app', // Your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
   exposedHeaders: ['Content-Length', 'Content-Type']
@@ -29,7 +29,7 @@ app.use(cors({
 
 // Make sure your static file serving has proper headers
 app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.header('Access-Control-Allow-Origin', 'https://nrc-frontend.vercel.app');
   res.header('Access-Control-Allow-Credentials', 'true');
   next();
 }, express.static(path.join(__dirname, 'uploads')));
