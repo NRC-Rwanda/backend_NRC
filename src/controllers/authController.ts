@@ -43,51 +43,58 @@ export const register = async (req: Request, res: Response) => {
 };
 
 // Login User
+
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body
 
   if (!email || !password) {
-     res.status(400).json({ success: false, error: "Email and password are required" });
-     return;
+    res.status(400).json({ success: false, error: "Email and password are required" })
+    return;
   }
 
   try {
     // Find user and explicitly select password field
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select("+password")
 
     if (!user) {
-       res.status(401).json({ success: false, error: "Invalid credentials" });
-       return;
+      res.status(401).json({ success: false, error: "Invalid credentials" })
+      return;
     }
 
     // Defensive check to ensure password is a string
     if (typeof user.password !== "string" || typeof password !== "string") {
-      console.error("Password types are invalid:", typeof password, typeof user.password);
-       res.status(500).json({ success: false, error: "Server error: password format invalid" });
-       return;
+      console.error("Password types are invalid:", typeof password, typeof user.password)
+      res.status(500).json({ success: false, error: "Server error: password format invalid" })
+      return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password)
 
     if (!isMatch) {
-       res.status(401).json({ success: false, error: "Invalid credentials" });
-       return;
+        res.status(401).json({ success: false, error: "Invalid credentials" })
+        return;
+    }
+
+    // Check if JWT_SECRET exists before using it
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is undefined. Check your environment variables.")
+      res.status(500).json({ success: false, error: "Server configuration error" })
+      return;
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: parseInt(process.env.JWT_EXPIRE!, 10) }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE ? Number.parseInt(process.env.JWT_EXPIRE, 10) : 3600,
+    })
 
-    res.status(200).json({ success: true, token, role: user.role });
+   res.status(200).json({ success: true, token, role: user.role })
+   return;
   } catch (err) {
-    console.error("Error in login:", err);
-    res.status(500).json({ success: false, error: "Login failed" });
+    console.error("Error in login:", err)
+    res.status(500).json({ success: false, error: "Login failed" })
+     return;
   }
-};
-
+}
 
 // Forgot Password
 export const forgotPassword = async (req: Request, res: Response) => {
