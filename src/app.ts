@@ -13,19 +13,35 @@ import blogRoutes from "./routes/blogsRoutes";
 
 const app = express();
 
-// Middleware
-// app.use(cors()); 
-app.use(helmet());
-app.use(morgan("dev")); 
-app.use(express.json());
 
-// In your main app.js or server.js
-app.use(cors({
-  origin: 'https://nrc-frontend.vercel.app', // Your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-  exposedHeaders: ['Content-Length', 'Content-Type']
-}));
+// Middleware
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false, // Allow cross-origin resource sharing
+  }),
+)
+app.use(morgan("dev"))
+app.use(express.json())
+
+// Single CORS configuration
+const allowedOrigins = ["http://localhost:3000", "https://nrc-frontend.vercel.app"]
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true)
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = "The CORS policy for this site does not allow access from the specified Origin."
+        return callback(new Error(msg), false)
+      }
+      return callback(null, true)
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+    exposedHeaders: ["Content-Length", "Content-Type", "Authorization"],
+  }),
+)
 
 // Make sure your static file serving has proper headers
 app.use('/uploads', (req, res, next) => {
