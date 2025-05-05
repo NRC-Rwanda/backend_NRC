@@ -13,47 +13,56 @@ import blogRoutes from "./routes/blogsRoutes";
 
 const app = express();
 
-
 // Middleware
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false, // Allow cross-origin resource sharing
-  }),
-)
-app.use(morgan("dev"))
-app.use(express.json())
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Explicitly allow cross-origin resources
+}));
+app.use(morgan("dev"));
+app.use(express.json());
 
-// Single CORS configuration
-const allowedOrigins = ["http://localhost:3000", "https://nrc-frontend.vercel.app"]
+// CORS Configuration
+const allowedOrigins = [
+  "http://localhost:3000", 
+  "https://nrc-frontend.vercel.app",
+  // Add any other origins you need to allow
+];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true)
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = "The CORS policy for this site does not allow access from the specified Origin."
-        return callback(new Error(msg), false)
-      }
-      return callback(null, true)
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-    exposedHeaders: ["Content-Length", "Content-Type", "Authorization"],
-  }),
-)
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowedOrigin => 
+      origin === allowedOrigin || 
+      origin.startsWith(allowedOrigin) ||
+      new URL(origin).hostname === new URL(allowedOrigin).hostname
+    )) {
+      return callback(null, true);
+    }
+    
+    const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+    return callback(new Error(msg), false);
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser support
+};
 
-// Make sure your static file serving has proper headers
+app.use(cors(corsOptions));
+
+// Static files with proper CORS headers
 app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://nrc-frontend.vercel.app');
+  res.header('Access-Control-Allow-Origin', allowedOrigins.join(', '));
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
   next();
-}, express.static(path.join(__dirname, 'uploads')));
-
+});
 
 // Middleware to parse URL-encoded request bodies
 app.use(express.urlencoded({ extended: true }));
- 
+
 // Routes
 app.use("/api", authRoutes);
 app.use("/api", contactRoutes); 
@@ -62,5 +71,10 @@ app.use("/api", publicationRoutes);
 app.use("/api", announcementRoutes);
 app.use("/api", opportunityRoutes);
 app.use("/api", blogRoutes);
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy" });
+});
 
 export default app;
