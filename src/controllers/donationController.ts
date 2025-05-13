@@ -1,76 +1,127 @@
-import { Request, Response } from 'express';
-import { Donation } from '../models/donation';
-import { initiateIremboPayment } from '../services/iremboPayService';
+import { Request, Response } from "express";
+import Donation from "../models/donation";
 
-export const submitDonation = async (req: Request, res: Response) => {
+export const createDonation = async (req: Request, res: Response) => {
   try {
-    const {
-      amount,
-      firstName,
-      lastName,
-      email,
-      status,
-      address,
-      city,
-      country,
-      phone,
-      paymentMethod,
-      contactOk
-    } = req.body;
+    const { amount, firstName, lastName, email, address, city, country, phone } = req.body;
 
-    // 1. Save donation to database
-    const donation = new Donation({
-      amount,
-      firstName,
-      lastName,
-      email,
-      status,
-      address,
-      city,
-      country,
-      phone,
-      paymentMethod,
-      contactOk,
-      paymentStatus: 'pending'
-    });
-    await donation.save();
-
-    // 2. Initiate payment with IremboPay (if not bank transfer)
-    if (paymentMethod !== 'bank-transfer') {
-      const paymentResult = await initiateIremboPayment(
-        amount,
-        email,
-        phone,
-        `${process.env.FRONTEND_URL}/payment-callback`
-      );
-
-      if (paymentResult.status === 'success') {
-        donation.iremboTransactionId = paymentResult.transactionId;
-        await donation.save();
-
-        return res.status(200).json({
-          success: true,
-          paymentUrl: paymentResult.paymentUrl
-        });
-      } else {
-        donation.paymentStatus = 'failed';
-        await donation.save();
-
-        return res.status(400).json({
-          success: false,
-          message: 'Payment initiation failed'
-        });
-      }
+    if (!amount || !firstName || !email || !address || !city || !country || !phone) {
+      res.status(400).json({ message: "Missing required fields" });
+      return;
     }
 
-    // 3. For bank transfers, just confirm
-    return res.status(200).json({
-      success: true,
-      message: 'Bank transfer details will be sent to your email'
+    const donation = new Donation({
+      ...req.body,
+      contactOk: req.body.contactOk || false,
     });
 
+    await donation.save();
+
+    res.status(201).json({
+      success: true,
+      data: donation,
+      message: "Donation created successfully",
+    });
   } catch (error) {
-    console.error('Donation submission error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Error creating donation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const getDonations = async (req: Request, res: Response) => {
+  try {
+    const donations = await Donation.find().sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      count: donations.length,
+      data: donations,
+    });
+  } catch (error) {
+    console.error("Error fetching donations:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const getDonationById = async (req: Request, res: Response) => {
+  try {
+    const donation = await Donation.findById(req.params.id);
+    if (!donation) {
+      res.status(404).json({
+        success: false,
+        message: "Donation not found",
+      });
+      return;
+    }
+    res.status(200).json({
+      success: true,
+      data: donation,
+    });
+  } catch (error) {
+    console.error("Error fetching donation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const updateDonation = async (req: Request, res: Response) => {
+  try {
+    const donation = await Donation.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!donation) {
+       res.status(404).json({
+        success: false,
+        message: "Donation not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: donation,
+      message: "Donation updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating donation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const deleteDonation = async (req: Request, res: Response) => {
+  try {
+    const donation = await Donation.findByIdAndDelete(req.params.id);
+
+    if (!donation) {
+      res.status(404).json({
+        success: false,
+        message: "Donation not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {},
+      message: "Donation deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting donation:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
