@@ -56,6 +56,7 @@ app.use(express.urlencoded({ extended: true }));
  
 // Routes
 app.use("/api", authRoutes);
+app.use("/api", contactRoutes);
 app.use("/api", contactRoutes); 
 app.use("/api", teamRoutes);
 app.use("/api", publicationRoutes);

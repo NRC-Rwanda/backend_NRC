@@ -1,33 +1,42 @@
-import multer from "multer";
+// src/middleware/upload.ts
+import multer, { FileFilterCallback } from "multer";
 import path from "path";
 import fs from "fs";
+import { Request } from "express";
 
-// Create uploads directory if it doesn't exist
+// Ensure uploads directory exists
 const uploadPath = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }
 
+// Configure Multer storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadPath);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${file.originalname}`;
     cb(null, uniqueSuffix);
   },
 });
 
-const fileFilter = (req: any, file: any, cb: any) => {
-  const allowedMimeTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "application/pdf",
-    "video/mp4",
-    "video/quicktime", // .mov
-  ];
+// Define allowed MIME types
+const allowedMimeTypes = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/pdf",
+  "video/mp4",
+  "video/quicktime", // .mov
+];
 
+// File filter function with proper typing
+const fileFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  cb: FileFilterCallback
+) => {
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -35,6 +44,7 @@ const fileFilter = (req: any, file: any, cb: any) => {
   }
 };
 
+// Export Multer upload instance
 const upload = multer({ storage, fileFilter });
 
 export default upload;
