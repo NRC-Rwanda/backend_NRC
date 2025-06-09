@@ -25,7 +25,7 @@ app.use(morgan("dev"))
 app.use(express.json())
 
 // Single CORS configuration
-const allowedOrigins = ["http://localhost:3000", "https://nrc-frontend.vercel.app"]
+const allowedOrigins = ["http://localhost:3000", "https://nrc-frontend.vercel.app","https://nrc.org.rw"]
 
 app.use(
   cors({
