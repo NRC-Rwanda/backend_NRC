@@ -8,6 +8,17 @@ import express from 'express';
 // import path from 'path';
 import fs from "fs";
 import path from "path";
+import cron from "node-cron";
+import axios from "axios";
+
+cron.schedule("*/10 * * * *", async () => {
+  try {
+    await axios.get("https://your-backend.onrender.com");
+    console.log("Pinged self to stay awake");
+  } catch (err) {
+    console.error("Ping failed", err);
+  }
+});
 
 // Ensure the uploads directory exists
 const uploadsDir = path.join(__dirname, "../uploads");
