@@ -7,37 +7,7 @@ import {
   deleteAnnouncement,
   getAnnouncementsByCategory,
 } from "../controllers/announcementController";
-import path from "path";
-import multer from "multer";
-
-// Multer configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../uploads")); // Save files to the uploads directory
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueSuffix); // Generate a unique filename
-  },
-});
-
-const fileFilter = (req: any, file: any, cb: any) => {
-  const allowedMimeTypes = [
-    "image/jpeg",
-    "image/png",
-    "application/pdf",
-    "video/mp4",
-    "video/quicktime", // .mov
-  ];
-
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Invalid file type. Only images, PDFs, and videos are allowed."));
-  }
-};
-
-const upload = multer({ storage, fileFilter });
+import upload from "../config/multerConfig"; // Use Cloudinary multer config
 
 const router = express.Router();
 

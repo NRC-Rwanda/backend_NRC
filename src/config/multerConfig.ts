@@ -1,40 +1,29 @@
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 
-// Create uploads directory if it doesn't exist
-const uploadPath = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${file.originalname}`;
-    cb(null, uniqueSuffix);
-  },
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-const fileFilter = (req: any, file: any, cb: any) => {
-  const allowedMimeTypes = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "application/pdf",
-    "video/mp4",
-    "video/quicktime", // .mov
-  ];
+// Set Cloudinary storage in multer
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: async (req, file) => ({
+    folder: "my_uploads", // Your folder in Cloudinary
+    allowed_formats: [
+      "jpg", "jpeg", "png", "gif", // Images
+      "pdf", "doc", "docx",         // Documents
+      "mp4", "mov", "avi", "webm",  // Videos
+      "mp3", "wav", "ogg"           // Audio
+    ],
+  }),
+});
 
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Only images, PDFs, and videos are allowed"));
-  }
-};
-
-const upload = multer({ storage, fileFilter });
+// Export upload middleware
+const upload = multer({ storage });
 
 export default upload;
