@@ -1,131 +1,227 @@
 import { Request, Response } from "express";
 import Publication from "../models/publication";
+import { v2 as cloudinary } from 'cloudinary';
 
-// Add a new publication
+interface IFileDictionary {
+  [key: string]: Express.Multer.File[];
+}
+
+// Helper to safely get file URLs
+const getFileUrl = (files: IFileDictionary | undefined, fieldName: string): string | null => {
+  if (!files || !files[fieldName] || !files[fieldName][0]) return null;
+  return files[fieldName][0].path || null;
+};
+
+// Delete file from Cloudinary if needed
+const deleteCloudinaryFile = async (url: string | null) => {
+  if (!url) return;
+  
+  try {
+    const publicId = url.split('/').pop()?.split('.')[0];
+    if (publicId) {
+      await cloudinary.uploader.destroy(publicId);
+    }
+  } catch (err) {
+    console.error('Error deleting Cloudinary file:', err);
+  }
+};
+
 export const addPublication = async (req: Request, res: Response) => {
   try {
-    console.log("Uploaded Files:", req.files); // Debugging: Log uploaded files
-    console.log("Request Body:", req.body); // Debugging: Log request body
-
-    // Extract fields from the request body
+    const files = req.files as IFileDictionary;
+    
+    // Extract and validate fields
     const { title, shortDescription, category, isOngoing, disclaimer } = req.body;
 
-    // Validate category
-    if (!["Research", "Reports", "Resources"].includes(category)) {
-    res.status(400).json({ success: false, error: "Invalid category" });
+    if (!title || !shortDescription || !category) {
+       res.status(400).json({ 
+        success: false, 
+        error: "Title, description and category are required" 
+      });
       return;
     }
 
-    // Extract file paths
-    const image = (req.files as any)?.image?.[0]?.filename || null;
-    const video = (req.files as any)?.video?.[0]?.filename || null;
-    const pdf = (req.files as any)?.pdf?.[0]?.filename || null;
+    if (!["Research", "Reports", "Resources"].includes(category)) {
+       res.status(400).json({ 
+        success: false, 
+        error: "Invalid category. Must be 'Research', 'Reports' or 'Resources'" 
+      });
+      return;
+    }
 
-    // Create a new publication
+    // Get file URLs from Cloudinary
+    const imageUrl = getFileUrl(files, 'image');
+    const videoUrl = getFileUrl(files, 'video');
+    const pdfUrl = getFileUrl(files, 'pdf');
+
     const publication = await Publication.create({
       title,
       shortDescription,
-      image,
-      video,
-      pdf,
+      image: imageUrl,
+      video: videoUrl,
+      pdf: pdfUrl,
       category,
-      isOngoing,
-      disclaimer,
+      isOngoing: isOngoing === 'true',
+      disclaimer
     });
 
-    res.status(201).json({ success: true, data: publication });
+    res.status(201).json({ 
+      success: true, 
+      data: publication 
+    });
   } catch (err) {
     console.error("Error adding publication:", err);
-    res.status(500).json({ success: false, error: "Failed to add publication" });
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to create publication",
+      details: process.env.NODE_ENV === 'development' && err instanceof Error ? err.message : undefined
+    });
   }
 };
 
-// Get all publications
 export const getPublications = async (req: Request, res: Response) => {
   try {
-    const publications = await Publication.find();
-    res.status(200).json({ success: true, data: publications });
+    const { category } = req.query;
+    const filter = category ? { category } : {};
+    
+    const publications = await Publication.find(filter).sort({ createdAt: -1 });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: publications 
+    });
   } catch (err) {
     console.error("Error fetching publications:", err);
-    res.status(500).json({ success: false, error: "Failed to fetch publications" });
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to fetch publications" 
+    });
   }
 };
 
-// Get a publication by ID
 export const getPublicationById = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
   try {
-    const publication = await Publication.findById(id);
-
+    const publication = await Publication.findById(req.params.id);
+    
     if (!publication) {
-      res.status(404).json({ success: false, error: "Publication not found" });
+       res.status(404).json({ 
+        success: false, 
+        error: "Publication not found" 
+      });
       return;
     }
-
-    res.status(200).json({ success: true, data: publication });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: publication 
+    });
   } catch (err) {
-    console.error("Error fetching publication by ID:", err);
-    res.status(500).json({ success: false, error: "Failed to fetch publication" });
+    console.error("Error fetching publication:", err);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to fetch publication" 
+    });
   }
 };
 
-// Update a publication
 export const updatePublication = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
   try {
-    console.log("Uploaded Files:", req.files); // Debugging: Log uploaded files
-    console.log("Request Body:", req.body); // Debugging: Log request body
-
-    // Extract fields from the request body
-    const { title, shortDescription, category, isOngoing, disclaimer } = req.body;
-
-    // Validate category
-    if (category && !["Research", "Reports", "Resources"].includes(category)) {
-    res.status(400).json({ success: false, error: "Invalid category" });
+    const files = req.files as IFileDictionary;
+    const { id } = req.params;
+    
+    // Get existing publication
+    const existingPublication = await Publication.findById(id);
+    if (!existingPublication) {
+       res.status(404).json({ 
+        success: false, 
+        error: "Publication not found" 
+      });
       return;
     }
-
-    // Extract file paths
-    const image = (req.files as any)?.image?.[0]?.filename || req.body.image || null;
-    const video = (req.files as any)?.video?.[0]?.filename || req.body.video || null;
-    const pdf = (req.files as any)?.pdf?.[0]?.filename || req.body.pdf || null;
-
-    // Update the publication
+    
+    // Prepare update data
+    const updateData: any = {
+      title: req.body.title || existingPublication.title,
+      shortDescription: req.body.shortDescription || existingPublication.shortDescription,
+      category: req.body.category || existingPublication.category,
+      isOngoing: req.body.isOngoing !== undefined 
+        ? req.body.isOngoing === 'true' 
+        : existingPublication.isOngoing,
+      disclaimer: req.body.disclaimer || existingPublication.disclaimer
+    };
+    
+    // Handle file updates
+    if (files?.image) {
+      await deleteCloudinaryFile(existingPublication.image ?? null);
+      updateData.image = getFileUrl(files, 'image');
+    }
+    
+    if (files?.video) {
+      await deleteCloudinaryFile(existingPublication.video ?? null);
+      updateData.video = getFileUrl(files, 'video');
+    }
+    
+    if (files?.pdf) {
+      await deleteCloudinaryFile(existingPublication.pdf ?? null);
+      updateData.pdf = getFileUrl(files, 'pdf');
+    }
+    
+    // Validate category if provided
+    if (req.body.category && !["Research", "Reports", "Resources"].includes(updateData.category)) {
+       res.status(400).json({ 
+        success: false, 
+        error: "Invalid category" 
+      });
+      return;
+    }
+    
     const updatedPublication = await Publication.findByIdAndUpdate(
       id,
-      { title, shortDescription, image, video, pdf, category, isOngoing, disclaimer },
-      { new: true, runValidators: true } // Return the updated document and validate fields
+      updateData,
+      { new: true, runValidators: true }
     );
-
-    if (!updatedPublication) {
-      res.status(404).json({ success: false, error: "Publication not found" });
-      return;
-    }
-
-    res.status(200).json({ success: true, data: updatedPublication });
+    
+    res.status(200).json({ 
+      success: true, 
+      data: updatedPublication 
+    });
   } catch (err) {
     console.error("Error updating publication:", err);
-    res.status(500).json({ success: false, error: "Failed to update publication" });
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to update publication" 
+    });
   }
 };
 
-// Delete a publication
 export const deletePublication = async (req: Request, res: Response) => {
-  const { id } = req.params;
-
   try {
-    const publication = await Publication.findByIdAndDelete(id);
-
+    const publication = await Publication.findByIdAndDelete(req.params.id);
+    
     if (!publication) {
-      res.status(404).json({ success: false, error: "Publication not found" });
+       res.status(404).json({ 
+        success: false, 
+        error: "Publication not found" 
+      });
       return;
     }
-
-    res.status(200).json({ success: true, message: "Publication deleted" });
+    
+    // Delete associated files from Cloudinary
+    await Promise.all([
+      deleteCloudinaryFile(publication.image ?? null),
+      deleteCloudinaryFile(publication.video ?? null),
+      deleteCloudinaryFile(publication.pdf ?? null)
+    ]);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: "Publication deleted successfully" 
+    });
   } catch (err) {
     console.error("Error deleting publication:", err);
-    res.status(500).json({ success: false, error: "Failed to delete publication" });
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to delete publication" 
+    });
   }
 };

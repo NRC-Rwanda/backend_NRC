@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../config/multerConfig";
 import {
   addAnnouncement,
   getAnnouncements,
@@ -7,42 +8,34 @@ import {
   deleteAnnouncement,
   getAnnouncementsByCategory,
 } from "../controllers/announcementController";
-import upload from "../config/multerConfig"; // Use Cloudinary multer config
 
 const router = express.Router();
 
-// Add a new announcement with file uploads
-router.post(
-  "/announcements",
-  upload.fields([
-    { name: "image", maxCount: 1 }, // Allow one image file
-    { name: "video", maxCount: 1 }, // Allow one video file
-    { name: "pdf", maxCount: 1 },   // Allow one PDF file
-  ]),
-  addAnnouncement
-);
+// File upload middleware with error handling
+const handleFileUpload = upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "video", maxCount: 1 },
+  { name: "pdf", maxCount: 1 }
+]);
 
-// Get all announcements
+// Apply to both POST and PUT routes
+const fileUploadMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  handleFileUpload(req, res, (err: any) => {
+    if (err) {
+      return res.status(400).json({ 
+        success: false, 
+        error: err.message || "File upload failed" 
+      });
+    }
+    next();
+  });
+};
+
+router.post("/announcements", fileUploadMiddleware, addAnnouncement);
 router.get("/announcements", getAnnouncements);
-
-// Get announcements by category
 router.get("/announcements/category", getAnnouncementsByCategory);
-
-// Get an announcement by ID
 router.get("/announcements/:id", getAnnouncementById);
-
-// Update an announcement
-router.put(
-  "/announcements/:id",
-  upload.fields([
-    { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
-    { name: "pdf", maxCount: 1 },
-  ]),
-  updateAnnouncement
-);
-
-// Delete an announcement
+router.put("/announcements/:id", fileUploadMiddleware, updateAnnouncement);
 router.delete("/announcements/:id", deleteAnnouncement);
 
 export default router;

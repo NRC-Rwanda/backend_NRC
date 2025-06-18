@@ -7,7 +7,7 @@ import authRoutes from "./routes/authRoutes";
 import contactRoutes from "./routes/contactRoutes";
 import publicationRoutes from "./routes/publicationRoutes";
 import teamRoutes from "./routes/teamRoutes";
-import opportunityRoutes from "./routes/opportunityRoutes";
+import opportunityRoutes from "./routes/upcomingRoutes";
 import announcementRoutes from "./routes/announcementRoutes";
 import blogRoutes from "./routes/blogsRoutes";
 import donationRoutes from "./routes/donationRoutes";
