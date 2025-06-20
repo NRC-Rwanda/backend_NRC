@@ -8,7 +8,7 @@ export interface IUpcomingEvent extends Document {
   category: string;
   image?: string;    // Cloudinary URL for image
   video?: string;    // Cloudinary URL for video
-  pdf?: string;      // Cloudinary URL for PDF
+  applyLink?: string; // URL for application
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,22 +42,24 @@ const UpcomingEventSchema: Schema<IUpcomingEvent> = new mongoose.Schema(
       trim: true
     },
     category: {
-  type: String,
-  required: true,
-  enum: [
-    'Conference',
-    'Workshop',
-    'Community',
-    'Entertainment', 
-    'Sports',
-    'Education',
-    'Networking',
-    'Exhibition',
-    'Seminar',
-    'Product Launch'
-  ],
-  default: 'Workshop' // Optional default
-},
+      type: String,
+      required: true,
+      enum: [
+        'Conference',
+        'Workshop',
+        'Opportunity',
+        'Hackathon',
+        'Community',
+        'Entertainment', 
+        'Sports',
+        'Education',
+        'Networking',
+        'Exhibition',
+        'Seminar',
+        'Product Launch'
+      ],
+      default: 'Workshop'
+    },
     image: {
       type: String,
       validate: {
@@ -78,19 +80,19 @@ const UpcomingEventSchema: Schema<IUpcomingEvent> = new mongoose.Schema(
         message: "Must be a valid Cloudinary URL"
       }
     },
-    pdf: {
+    applyLink: {
       type: String,
       validate: {
         validator: function(v: string) {
           if (!v) return true; // Optional field
-          return /^https?:\/\/res\.cloudinary\.com\/.+\/.+$/.test(v);
+          return /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/.test(v);
         },
-        message: "Must be a valid Cloudinary URL"
+        message: "Must be a valid URL"
       }
     }
   },
   {
-    timestamps: true // Automatically adds createdAt and updatedAt
+    timestamps: true
   }
 );
 

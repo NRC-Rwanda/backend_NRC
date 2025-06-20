@@ -25,7 +25,7 @@ const deleteCloudinaryFile = async (url: string | null) => {
 export const createUpcomingEvent = async (req: Request, res: Response) => {
   try {
     const files = req.files as IEventFiles;
-    const { title, description, eventDate, location, category } = req.body;
+    const { title, description, eventDate, location, category , applyLink} = req.body;
 
     // Validate required fields
     if (!title || !eventDate || !location || !category) {
@@ -39,7 +39,6 @@ export const createUpcomingEvent = async (req: Request, res: Response) => {
     // Get media URLs from Cloudinary
     const imageUrl = files?.image?.[0]?.path || null;
     const videoUrl = files?.video?.[0]?.path || null;
-    const pdfUrl = files?.pdf?.[0]?.path || null;
 
     const event = new UpcomingEvent({
       title,
@@ -49,7 +48,7 @@ export const createUpcomingEvent = async (req: Request, res: Response) => {
       category,
       image: imageUrl,
       video: videoUrl,
-      pdf: pdfUrl
+      applyLink,
     });
 
     await event.save();
@@ -142,13 +141,14 @@ export const updateUpcomingEvent = async (req: Request, res: Response) => {
       category: any;
       image?: string | null;
       video?: string | null;
-      pdf?: string | null;
+      applyLink?: string | null;
     } = {
       title: req.body.title || existingEvent.title,
       description: req.body.description || existingEvent.description,
       eventDate: req.body.eventDate || existingEvent.eventDate,
       location: req.body.location || existingEvent.location,
-      category: req.body.category || existingEvent.category
+      category: req.body.category || existingEvent.category,
+      applyLink: req.body.applyLink || existingEvent.applyLink
     };
     
     // Handle media updates
@@ -160,10 +160,7 @@ export const updateUpcomingEvent = async (req: Request, res: Response) => {
       await deleteCloudinaryFile(existingEvent.video ?? null);
       updateData.video = files.video[0].path;
     }
-    if (files?.pdf?.[0]?.path) {
-      await deleteCloudinaryFile(existingEvent.pdf ?? null);
-      updateData.pdf = files.pdf[0].path;
-    }
+   
     
     const updatedEvent = await UpcomingEvent.findByIdAndUpdate(
       id,
@@ -200,7 +197,6 @@ export const deleteUpcomingEvent = async (req: Request, res: Response) => {
     await Promise.all([
       deleteCloudinaryFile(event.image ?? null),
       deleteCloudinaryFile(event.video ?? null),
-      deleteCloudinaryFile(event.pdf ?? null)
     ]);
     
     res.status(200).json({
