@@ -18,19 +18,23 @@ const handleFileUpload = upload.fields([
   { name: "pdf", maxCount: 1 }
 ]);
 
-// Apply to both POST and PUT routes
-const fileUploadMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const fileUploadMiddleware = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
   handleFileUpload(req, res, (err: any) => {
     if (err) {
-      return res.status(400).json({ 
-        success: false, 
-        error: err.message || "File upload failed" 
+      return res.status(400).json({
+        success: false,
+        error: err.message || "File upload failed"
       });
     }
     next();
   });
 };
 
+// Routes
 router.post("/announcements", fileUploadMiddleware, addAnnouncement);
 router.get("/announcements", getAnnouncements);
 router.get("/announcements/category", getAnnouncementsByCategory);
