@@ -1,14 +1,18 @@
 import { Request, Response } from "express";
 import Blog from "../models/blogs";
+import { v2 as cloudinary } from "cloudinary";
 
 interface IFileDictionary {
   [key: string]: Express.Multer.File[];
 }
 
 // Helper function to safely access files
-const getFileUrl = (files: IFileDictionary | undefined, fieldName: string): string => {
-  if (!files || !files[fieldName] || !files[fieldName][0]) return "";
-  return files[fieldName][0].path || "";
+const getFile = (
+  files: IFileDictionary | undefined,
+  fieldName: string
+): Express.Multer.File | null => {
+  if (!files || !files[fieldName] || !files[fieldName][0]) return null;
+  return files[fieldName][0];
 };
 
 // Add a new blog with proper type checking
@@ -26,17 +30,23 @@ export const addBlog = async (req: Request, res: Response) => {
     }
 
     const files = req.files as IFileDictionary;
-    const videoUrl = getFileUrl(files, 'video');
-    const pdfUrl = getFileUrl(files, 'pdf');
-    const imageUrl = getFileUrl(files, 'image');
+    const videoFile = getFile(files, 'video');
+    const pdfFile = getFile(files, 'pdf');
+    const imageFile = getFile(files, 'image');
 
     const blog = await Blog.create({
       title,
       shortDescription,
       longDescription,
-      video: videoUrl,
-      pdf: pdfUrl,
-      image: imageUrl,
+      image: imageFile?.path,
+      imagePublicId: imageFile?.filename,
+
+      video: videoFile?.path,
+      videoPublicId: videoFile?.filename,
+
+      pdf: pdfFile?.path,
+      pdfPublicId: pdfFile?.filename,
+
     });
 
     res.status(201).json({
@@ -46,9 +56,9 @@ export const addBlog = async (req: Request, res: Response) => {
         title: blog.title,
         shortDescription: blog.shortDescription,
         longDescription: blog.longDescription,
-        videoUrl: videoUrl || null,
-        pdfUrl: pdfUrl || null,
-        imageUrl: imageUrl || null,
+        videoFile: videoFile || null,
+        pdfFile: pdfFile || null,
+        imageFile: imageFile || null,
         createdAt: blog.createdAt,
       },
     });
@@ -136,105 +146,126 @@ export const updateBlog = async (req: Request, res: Response) => {
     const { title, shortDescription, longDescription } = req.body;
     const files = req.files as IFileDictionary;
 
-    // Build the update object
-    const updateData: any = {
-      ...(title && { title }),
-      ...(shortDescription && { shortDescription }),
-      ...(longDescription && { longDescription }),
-    };
-
-    // Only update file URLs if new files were uploaded
-    const videoUrl = getFileUrl(files, 'video');
-    const pdfUrl = getFileUrl(files, 'pdf');
-    const imageUrl = getFileUrl(files, 'image');
-
-    if (videoUrl) updateData.video = videoUrl;
-    if (pdfUrl) updateData.pdf = pdfUrl;
-    if (imageUrl) updateData.image = imageUrl;
-
-    // Validate at least one field is being updated
-    if (Object.keys(updateData).length === 0) {
-       res.status(400).json({ 
-        success: false, 
-        error: "No valid fields provided for update" 
-      });
+    const blog = await Blog.findById(id);
+    if (!blog) {
+      res.status(404).json({ success: false, error: "Blog not found" });
       return;
     }
 
-    const updatedBlog = await Blog.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    // ✅ Update text fields
+    if (title) blog.title = title;
+    if (shortDescription) blog.shortDescription = shortDescription;
+    if (longDescription) blog.longDescription = longDescription;
 
-    if (!updatedBlog) {
-       res.status(404).json({ 
-        success: false, 
-        error: "Blog not found" 
-      });
-      return;
+    /**
+     * ✅ IMAGE UPDATE (SAFE)
+     */
+    const imageFile = getFile(files, "image");
+    if (imageFile) {
+      const newImagePublicId = imageFile.filename;
+      const newImagePath = imageFile.path;
+
+      // delete old image AFTER new one exists
+      if (blog.imagePublicId && blog.imagePublicId !== newImagePublicId) {
+        await cloudinary.uploader.destroy(blog.imagePublicId);
+      }
+
+      blog.image = newImagePath;
+      blog.imagePublicId = newImagePublicId;
     }
 
-    res.status(200).json({
-      success: true,
-      data: updatedBlog,
-    });
+    /**
+     * ✅ VIDEO UPDATE (SAFE)
+     */
+    const videoFile = getFile(files, "video");
+    if (videoFile) {
+      const newVideoPublicId = videoFile.filename;
+      const newVideoPath = videoFile.path;
+
+      if (blog.videoPublicId && blog.videoPublicId !== newVideoPublicId) {
+        await cloudinary.uploader.destroy(blog.videoPublicId, {
+          resource_type: "video",
+        });
+      }
+
+      blog.video = newVideoPath;
+      blog.videoPublicId = newVideoPublicId;
+    }
+
+    /**
+     * ✅ PDF UPDATE (SAFE)
+     */
+    const pdfFile = getFile(files, "pdf");
+    if (pdfFile) {
+      const newPdfPublicId = pdfFile.filename;
+      const newPdfPath = pdfFile.path;
+
+      if (blog.pdfPublicId && blog.pdfPublicId !== newPdfPublicId) {
+        await cloudinary.uploader.destroy(blog.pdfPublicId, {
+          resource_type: "raw",
+        });
+      }
+
+      blog.pdf = newPdfPath;
+      blog.pdfPublicId = newPdfPublicId;
+    }
+
+    await blog.save();
+
+    res.status(200).json({ success: true, data: blog });
+    return;
   } catch (err: any) {
-    console.error("Error updating blog:", err);
-    
-    if (err.name === 'CastError') {
-       res.status(400).json({ 
-        success: false, 
-        error: "Invalid blog ID format" 
-      });
-      return;
-    }
-    
-    res.status(500).json({ 
-      success: false, 
+    console.error("Update blog error:", err);
+    res.status(500).json({
+      success: false,
       error: "Failed to update blog",
-      ...(process.env.NODE_ENV === 'development' && { details: err.message })
+      ...(process.env.NODE_ENV === "development" && { details: err.message }),
     });
+    return;
   }
 };
+
+
+
+
 
 // Delete a blog with error handling
 export const deleteBlog = async (req: Request, res: Response) => {
   try {
-    const blog = await Blog.findByIdAndDelete(req.params.id);
-
+    const blog = await Blog.findById(req.params.id);
     if (!blog) {
-       res.status(404).json({ 
-        success: false, 
-        error: "Blog not found" 
-      });
+      res.status(404).json({ success: false, error: "Blog not found" });
       return;
     }
 
-    // TODO: Add Cloudinary file deletion logic here if needed
+    // Delete files from Cloudinary
+    if (blog.imagePublicId) {
+      await cloudinary.uploader.destroy(blog.imagePublicId);
+    }
 
-    res.status(200).json({ 
-      success: true, 
+    if (blog.videoPublicId) {
+      await cloudinary.uploader.destroy(blog.videoPublicId, {
+        resource_type: "video",
+      });
+    }
+
+    if (blog.pdfPublicId) {
+      await cloudinary.uploader.destroy(blog.pdfPublicId);
+    }
+
+    // Delete blog from DB
+    await blog.deleteOne();
+
+    res.status(200).json({
+      success: true,
       message: "Blog deleted successfully",
-      deletedBlog: {
-        id: blog._id,
-        title: blog.title,
-      }
     });
   } catch (err: any) {
-    console.error("Error deleting blog:", err);
-    
-    if (err.name === 'CastError') {
-       res.status(400).json({ 
-        success: false, 
-        error: "Invalid blog ID format" 
-      });
-      return;
-    }
-    
-    res.status(500).json({ 
-      success: false, 
+    console.error("Delete blog error:", err);
+    res.status(500).json({
+      success: false,
       error: "Failed to delete blog",
-      ...(process.env.NODE_ENV === 'development' && { details: err.message })
+      ...(process.env.NODE_ENV === "development" && { details: err.message }),
     });
-  } 
+  }
 };

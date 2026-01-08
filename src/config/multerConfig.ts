@@ -43,8 +43,8 @@ const storage = new CloudinaryStorage({
       folder: "my_uploads",
       resource_type: getResourceType(file.mimetype),
       chunk_size: 20 * 1024 * 1024, // 20MB chunks
-      use_filename: true,
-      unique_filename: false,
+      use_filename: false,
+      unique_filename: true,
       overwrite: false,
     };
 

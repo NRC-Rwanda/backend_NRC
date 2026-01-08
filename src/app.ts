@@ -25,7 +25,10 @@ app.use(morgan("dev"))
 app.use(express.json())
 
 // Single CORS configuration
-const allowedOrigins = ["https://nrc.org.rw","https://www.nrc.org.rw"]
+const allowedOrigins = [
+  "https://nrclb.org",
+  "https://www.nrclb.org"
+];
 
 app.use(
   cors({
