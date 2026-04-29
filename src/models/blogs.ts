@@ -10,8 +10,8 @@ export interface IBlog extends Document {
   video?: string;
   videoPublicId?: string;
 
-  pdf?: string;
-  pdfPublicId?: string;
+  pdfUrl: String,
+
 
   createdAt: Date;
 }
@@ -26,8 +26,7 @@ const BlogSchema: Schema<IBlog> = new mongoose.Schema({
   video: { type: String },
   videoPublicId: { type: String },
 
-  pdf: { type: String },
-  pdfPublicId: { type: String },
+  pdfUrl: { type: String },
   
   createdAt: { type: Date, default: Date.now },
 });

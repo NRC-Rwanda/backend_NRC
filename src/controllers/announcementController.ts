@@ -44,7 +44,6 @@ export const addAnnouncement = async (req: Request, res: Response) => {
 
     const imageFile = getFile(files, "image");
     const videoFile = getFile(files, "video");
-    const pdfFile = getFile(files, "pdf");
 
     const announcement = await Announcement.create({
       title,
@@ -58,8 +57,6 @@ export const addAnnouncement = async (req: Request, res: Response) => {
       video: videoFile?.path,
       videoPublicId: videoFile?.filename,
 
-      pdf: pdfFile?.path,
-      pdfPublicId: pdfFile?.filename,
     });
 
     res.status(201).json({ success: true, data: announcement });

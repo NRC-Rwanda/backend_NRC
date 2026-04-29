@@ -37,5 +37,4 @@ router.get("/publications", getPublications);
 router.get("/publications/:id", getPublicationById);
 router.put("/publications/:id", fileUploadMiddleware, updatePublication);
 router.delete("/publications/:id", deletePublication);
-
 export default router;

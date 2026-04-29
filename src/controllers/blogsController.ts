@@ -18,7 +18,7 @@ const getFile = (
 // Add a new blog with proper type checking
 export const addBlog = async (req: Request, res: Response) => {
   try {
-    const { title, shortDescription, longDescription } = req.body;
+    const { title, shortDescription, longDescription, pdfUrl} = req.body;
 
     // Validate required fields
     if (!title || !shortDescription || !longDescription) {
@@ -31,7 +31,6 @@ export const addBlog = async (req: Request, res: Response) => {
 
     const files = req.files as IFileDictionary;
     const videoFile = getFile(files, 'video');
-    const pdfFile = getFile(files, 'pdf');
     const imageFile = getFile(files, 'image');
 
     const blog = await Blog.create({
@@ -44,8 +43,7 @@ export const addBlog = async (req: Request, res: Response) => {
       video: videoFile?.path,
       videoPublicId: videoFile?.filename,
 
-      pdf: pdfFile?.path,
-      pdfPublicId: pdfFile?.filename,
+      pdfUrl,
 
     });
 
@@ -56,8 +54,8 @@ export const addBlog = async (req: Request, res: Response) => {
         title: blog.title,
         shortDescription: blog.shortDescription,
         longDescription: blog.longDescription,
+        pdfUrl: blog.pdfUrl,  
         videoFile: videoFile || null,
-        pdfFile: pdfFile || null,
         imageFile: imageFile || null,
         createdAt: blog.createdAt,
       },
@@ -195,20 +193,10 @@ export const updateBlog = async (req: Request, res: Response) => {
     /**
      * ✅ PDF UPDATE (SAFE)
      */
-    const pdfFile = getFile(files, "pdf");
-    if (pdfFile) {
-      const newPdfPublicId = pdfFile.filename;
-      const newPdfPath = pdfFile.path;
+    if (req.body.pdfUrl) {
+      blog.pdfUrl = req.body.pdfUrl;
+}
 
-      if (blog.pdfPublicId && blog.pdfPublicId !== newPdfPublicId) {
-        await cloudinary.uploader.destroy(blog.pdfPublicId, {
-          resource_type: "raw",
-        });
-      }
-
-      blog.pdf = newPdfPath;
-      blog.pdfPublicId = newPdfPublicId;
-    }
 
     await blog.save();
 
@@ -247,10 +235,6 @@ export const deleteBlog = async (req: Request, res: Response) => {
       await cloudinary.uploader.destroy(blog.videoPublicId, {
         resource_type: "video",
       });
-    }
-
-    if (blog.pdfPublicId) {
-      await cloudinary.uploader.destroy(blog.pdfPublicId);
     }
 
     // Delete blog from DB

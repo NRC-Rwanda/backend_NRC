@@ -11,6 +11,7 @@ import opportunityRoutes from "./routes/upcomingRoutes";
 import announcementRoutes from "./routes/announcementRoutes";
 import blogRoutes from "./routes/blogsRoutes";
 import donationRoutes from "./routes/donationRoutes";
+import subscribeRoutes from "./routes/subscribeRoutes";
 
 const app = express();
 
@@ -27,7 +28,9 @@ app.use(express.json())
 // Single CORS configuration
 const allowedOrigins = [
   "https://nrclb.org",
-  "https://www.nrclb.org"
+  "https://www.nrclb.org",
+  "http://localhost:3000",
+  
 ];
 
 app.use(
@@ -67,5 +70,6 @@ app.use("/api", announcementRoutes);
 app.use("/api", opportunityRoutes);
 app.use("/api", blogRoutes);
 app.use("/api", donationRoutes);
+app.use("/api", subscribeRoutes);
 
 export default app;

@@ -17,7 +17,7 @@ const getFile = (
 
 export const addPublication = async (req: Request, res: Response) => {
   try {
-    const { title, shortDescription, category, isOngoing, disclaimer } = req.body;
+    const { title, shortDescription, category, isOngoing, disclaimer, pdfUrl } = req.body;
 
     if (!title || !shortDescription || !category) {
       res.status(400).json({
@@ -39,7 +39,6 @@ export const addPublication = async (req: Request, res: Response) => {
 
     const imageFile = getFile(files, "image");
     const videoFile = getFile(files, "video");
-    const pdfFile = getFile(files, "pdf");
 
     const publication = await Publication.create({
       title,
@@ -54,11 +53,13 @@ export const addPublication = async (req: Request, res: Response) => {
       video: videoFile?.path,
       videoPublicId: videoFile?.filename,
 
-      pdf: pdfFile?.path,
-      pdfPublicId: pdfFile?.filename,
+       pdfUrl
     });
 
     res.status(201).json({ success: true, data: publication });
+    
+    console.log(publication);
+
   } catch (err: any) {
     console.error("Error adding publication:", err);
     res.status(500).json({
@@ -172,20 +173,10 @@ export const updatePublication = async (req: Request, res: Response) => {
     /**
      * ✅ PDF UPDATE
      */
-    const pdfFile = getFile(files, "pdf");
-    if (pdfFile) {
-      if (
-        publication.pdfPublicId &&
-        publication.pdfPublicId !== pdfFile.filename
-      ) {
-        await cloudinary.uploader.destroy(publication.pdfPublicId, {
-          resource_type: "raw",
-        });
-      }
+    if (req.body.pdfUrl) {
+  publication.pdfUrl = req.body.pdfUrl;
+}
 
-      publication.pdf = pdfFile.path;
-      publication.pdfPublicId = pdfFile.filename;
-    }
 
     await publication.save();
 
@@ -219,11 +210,7 @@ export const deletePublication = async (req: Request, res: Response) => {
       });
     }
 
-    if (publication.pdfPublicId) {
-      await cloudinary.uploader.destroy(publication.pdfPublicId, {
-        resource_type: "raw",
-      });
-    }
+    
 
     await publication.deleteOne();
 
@@ -240,3 +227,4 @@ export const deletePublication = async (req: Request, res: Response) => {
     });
   }
 };
+

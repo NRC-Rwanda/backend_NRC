@@ -9,8 +9,8 @@ export interface IPublication extends Document {
   video?: string;
   videoPublicId?: string;
 
-  pdf?: string;
-  pdfPublicId?: string;
+  pdfUrl: String,
+
 
   category: "Research" | "Reports" | "Resources"; // Enum for category
   isOngoing?: boolean; // Indicates if the publication is ongoing
@@ -27,8 +27,8 @@ const PublicationSchema: Schema<IPublication> = new mongoose.Schema(
     video: { type: String },
     videoPublicId: { type: String },
 
-    pdf: { type: String },
-    pdfPublicId: { type: String },
+    pdfUrl: { type: String },
+
   
     category: { 
       type: String,
